@@ -39,10 +39,24 @@
 <body>
     <div class="container">
         <h1 class="text-center mb-4">LLM SQL Query Generator</h1>
-        
+
         <div class="card">
             <div class="card-body">
                 <h5 class="card-title">Enter Your Query</h5>
+
+                <!-- Brand Selector -->
+                <div class="mb-3">
+                    <label for="brandSelect" class="form-label">Select Brand (optional):</label>
+                    <select class="form-select" id="brandSelect">
+                        <option value="">-- None --</option>
+                        <option value="ICIMS">ICIMS</option>
+                        <option value="Paylocity">Paylocity</option>
+                        <option value="Downtime">Downtime</option>
+                        <option value="Droptop">Droptop</option>
+                    </select>
+                </div>
+
+                <!-- Query Input -->
                 <div class="query-input">
                     <div class="input-group mb-3">
                         <input type="text" class="form-control" id="queryInput" placeholder="e.g., how many employees are there in New York?">
@@ -60,12 +74,12 @@
                         <strong>Original Query:</strong>
                         <p id="originalQuery"></p>
                     </div>
-                    
+
                     <div class="mb-3">
                         <strong>Suggested Columns:</strong>
                         <div id="suggestedColumns"></div>
                     </div>
-                    
+
                     <div class="mb-3">
                         <strong>Generated SQL:</strong>
                         <pre id="sqlResponse"></pre>
@@ -77,41 +91,44 @@
 
     <!-- Bootstrap JS Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const submitBtn = document.getElementById('submitQuery');
             const queryInput = document.getElementById('queryInput');
+            const brandSelect = document.getElementById('brandSelect');
             const resultsSection = document.getElementById('results');
             const originalQueryEl = document.getElementById('originalQuery');
             const suggestedColumnsEl = document.getElementById('suggestedColumns');
             const sqlResponseEl = document.getElementById('sqlResponse');
-            
-            // Handle form submission
+
             submitBtn.addEventListener('click', function() {
-                const query = queryInput.value.trim();
-                
+                let query = queryInput.value.trim();
+                const selectedBrand = brandSelect.value;
+
                 if (!query) {
                     alert('Please enter a query');
                     return;
                 }
-                
+
+                // Append brand info to the query
+                if (selectedBrand) {
+                    query += ` for brand ${selectedBrand}`;
+                }
+
                 // Show loading state
                 submitBtn.disabled = true;
                 submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
-                
-                // Call Azure Function with CORS handling
+
                 const functionUrl = 'https://llm-sql-querygenerator.azurewebsites.net/api/http_trigger';
-                
+
                 fetch(functionUrl, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({
-                        query: query
-                    }),
-                    mode: 'cors' // Explicitly request CORS
+                    body: JSON.stringify({ query }),
+                    mode: 'cors'
                 })
                 .then(response => {
                     if (!response.ok) {
@@ -120,10 +137,8 @@
                     return response.json();
                 })
                 .then(data => {
-                    // Display results
                     originalQueryEl.textContent = data.query;
-                    
-                    // Display suggested columns
+
                     suggestedColumnsEl.innerHTML = '';
                     data.suggested_columns.forEach(col => {
                         const colEl = document.createElement('span');
@@ -131,28 +146,23 @@
                         colEl.textContent = col;
                         suggestedColumnsEl.appendChild(colEl);
                     });
-                    
-                    // Display SQL response
+
                     sqlResponseEl.textContent = data.sql_response;
-                    
-                    // Show results section
                     resultsSection.style.display = 'block';
-                    
+
                     // Reset button
                     submitBtn.disabled = false;
                     submitBtn.textContent = 'Submit';
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    alert(`Error: ${error.message}\n\nIf you see CORS errors, the server may not be configured to allow requests from this origin.`);
-                    
-                    // Reset button
+                    alert(`Error: ${error.message}`);
                     submitBtn.disabled = false;
                     submitBtn.textContent = 'Submit';
                 });
             });
-            
-            // Allow submitting with Enter key
+
+            // Submit on Enter
             queryInput.addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
                     submitBtn.click();
