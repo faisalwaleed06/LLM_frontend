@@ -49,7 +49,10 @@
                     <label for="brandSelect" class="form-label">Select Brand (optional):</label>
                     <select class="form-select" id="brandSelect">
                         <option value="">-- None --</option>
-                        <option value="ICIMS">ICIMS</option>
+                        <option value="ADP">ADP</option>
+                        <option value="CnR_Fleet_Invoices">CnR</option>
+                        <option value="GnA">GnA</option>
+                        <option value="fmm_odoo">ODOO</option>
                         <option value="Paylocity">Paylocity</option>
                         <option value="Downtime">Downtime</option>
                         <option value="Droptop">Droptop</option>
@@ -71,7 +74,7 @@
                 <div class="card-body">
                     <h5 class="card-title">Query Results</h5>
                     <div class="mb-3">
-                        <strong>Original Query:</strong>
+                        <strong>Query:</strong>
                         <p id="originalQuery"></p>
                     </div>
 
@@ -111,8 +114,10 @@
                     return;
                 }
 
+                let display_query=query;
                 // Append brand info to the query
                 if (selectedBrand) {
+
                     query += ` Only Select suggested columns from table having name like ${selectedBrand} for making sql query`;
                 }
 
@@ -137,7 +142,7 @@
                     return response.json();
                 })
                 .then(data => {
-                    originalQueryEl.textContent = data.query;
+                    originalQueryEl.textContent = display_query;
 
                     suggestedColumnsEl.innerHTML = '';
                     data.suggested_columns.forEach(col => {
